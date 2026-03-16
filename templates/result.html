@@ -1,0 +1,148 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>AI Result</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Verdana, sans-serif;
+}
+
+body{
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+background:linear-gradient(135deg,#0f3d3e,#1a5f63,#0b2e2f);
+}
+
+/* card */
+
+.card{
+width:650px;
+background:white;
+border-radius:20px;
+padding:35px;
+box-shadow:0 15px 40px rgba(0,0,0,0.2);
+position:relative;
+}
+
+/* title */
+
+.card h2{
+text-align:center;
+margin-bottom:25px;
+color:#444;
+}
+
+/* result */
+
+.result{
+background:#f7f7f7;
+border-left:6px solid #ff6b81;
+padding:20px;
+border-radius:8px;
+max-height:260px;
+overflow:auto;
+line-height:1.6;
+margin-bottom:20px;
+}
+
+/* pages */
+
+.pages{
+background:#ffe8ec;
+padding:10px;
+border-radius:6px;
+margin-bottom:20px;
+font-weight:bold;
+}
+
+/* buttons */
+
+.buttons{
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+
+button{
+background:#ff6b81;
+color:white;
+border:none;
+padding:10px 20px;
+border-radius:20px;
+cursor:pointer;
+font-size:14px;
+transition:0.3s;
+}
+
+button:hover{
+background:#ff4757;
+}
+
+a{
+text-decoration:none;
+color:#555;
+}
+
+a:hover{
+color:black;
+}
+
+/* floating circle */
+
+.circle{
+position:absolute;
+width:120px;
+height:120px;
+background:linear-gradient(45deg,#ff6b81,#ff9ff3);
+border-radius:50%;
+top:-40px;
+right:-40px;
+opacity:0.3;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="card">
+
+<div class="circle"></div>
+
+<h2>AI Output Result</h2>
+
+<div class="result">
+<p>{{ result }}</p>
+</div>
+
+{% if show_pages %}
+<div class="pages">
+Total Pages: {{ pages }}
+</div>
+{% endif %}
+
+<div class="buttons">
+
+<form action="/download-pdf" method="post">
+<input type="hidden" name="result" value="{{ result }}">
+<button type="submit">Download PDF</button>
+</form>
+
+<a href="/">⬅ Go Back</a>
+
+</div>
+
+</div>
+
+</body>
+</html>
+
