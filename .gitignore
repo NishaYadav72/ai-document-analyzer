@@ -1,17 +1,22 @@
-# Python virtual environment
-venv/
+# Python compiled files
 __pycache__/
-
-# OS / IDE files
 *.pyc
 *.pyo
 *.pyd
-.DS_Store
-*.sqlite3
 
-# PDFs, uploads, results
+# Virtual environment folders
+venv/
+.env/
+.venv/
+
+# OS files (Windows/Mac)
+.DS_Store
+Thumbs.db
+
+# Ignore uploads + results
 uploads/
 result.pdf
 
-# env files
-.env
+# IDE folders (agar use ho rahe ho)
+.vscode/
+.idea/

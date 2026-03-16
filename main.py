@@ -21,10 +21,11 @@ templates = Jinja2Templates(directory="templates")
 os.makedirs("uploads", exist_ok=True)
 
 
-@app.get("/", response_class=HTMLResponse)
+from fastapi import Request, FastAPI
+
+@app.get("/", methods=["GET", "HEAD"])
 async def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
-
 
 @app.post("/analyze", response_class=HTMLResponse)
 async def analyze(request: Request, file: UploadFile = File(...), prompt: str = Form(...)):
