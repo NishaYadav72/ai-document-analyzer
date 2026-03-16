@@ -1,0 +1,17 @@
+# Python virtual environment
+venv/
+__pycache__/
+
+# OS / IDE files
+*.pyc
+*.pyo
+*.pyd
+.DS_Store
+*.sqlite3
+
+# PDFs, uploads, results
+uploads/
+result.pdf
+
+# env files
+.env
