@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+jinja2
+easyocr
+torch
+torchvision
+numpy
+pillow
+PyPDF2
+pandas
+pdf2image
+reportlab
