@@ -21,85 +21,85 @@ templates = Jinja2Templates(directory="templates")
 os.makedirs("uploads", exist_ok=True)
 
 
-from fastapi import Request
-
-@app.api_route("/", methods=["GET", "HEAD"])
+@app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
+
 @app.post("/analyze", response_class=HTMLResponse)
 async def analyze(request: Request, file: UploadFile = File(...), prompt: str = Form(...)):
-    try:
-        # Save uploaded file
-        file_location = f"uploads/{file.filename}"
-        with open(file_location, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
 
-        context = ""
-        pages = 0
+    file_location = f"uploads/{file.filename}"
 
-        # PDF
-        if file.filename.endswith(".pdf"):
-            data = read_pdf(file_location)
-            context = data["text"]
-            pages = data["pages"]
+    with open(file_location, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
 
-        # Excel
-        elif file.filename.endswith(".xlsx"):
-            context = read_excel(file_location)
-            pages = 1
+    context = ""
+    pages = 0
 
-        # Images
-        elif file.filename.lower().endswith((".png", ".jpg", ".jpeg")):
-            context = read_image(file_location)
-            pages = 1
+    # PDF
+    if file.filename.endswith(".pdf"):
+        data = read_pdf(file_location)
+        context = data["text"]
+        pages = data["pages"]
 
-        # Decide prompt behaviour
-        prompt_lower = prompt.lower()
-        show_pages = False
+    # Excel
+    elif file.filename.endswith(".xlsx"):
+        context = read_excel(file_location)
+        pages = 1
 
-        if "page" in prompt_lower:
-            result = f"The document contains {pages} pages."
-            show_pages = True
+    # Image
+    elif file.filename.endswith(".png") or file.filename.endswith(".jpg") or file.filename.endswith(".jpeg"):
+        context = read_image(file_location)
+        pages = 1
+    print("OCR TEXT:", context)
 
-        elif "name" in prompt_lower:
-            result = extract_name(context)
+    prompt_lower = prompt.lower()
+    show_pages = False   # yaha default define karo
 
-        elif "write" in prompt_lower or "text" in prompt_lower:
-            result = context  # direct OCR/text output
+    if "page" in prompt_lower:
+     result = f"The document contains {pages} pages."
+     show_pages = True
 
-        else:
-            result = ask_llm(prompt, context)
+    elif "name" in prompt_lower:
+        result = extract_name(context)
 
-        return templates.TemplateResponse(
-            "result.html",
-            {
-                "request": request,
-                "result": result,
-                "pages": pages,
-                "show_pages": show_pages,
-            },
-        )
-
-    except Exception as e:
-        # 💥 Print error to logs (Render will show this)
-        print("❌ ANALYZE ERROR:", e)
-        raise  # re‑raise so the stacktrace gets logged by uvicorn
+    elif "write" in prompt_lower or "text" in prompt_lower:
+        result = context   # direct OCR text
 
 
+    else:
+        result = ask_llm(prompt, context)
+    return templates.TemplateResponse(
+        "result.html",
+        {
+            "request": request,
+            "result": result,
+            "pages": pages,
+            "show_pages": show_pages
+       }
+  )
+
+
+# ✅ PDF DOWNLOAD ROUTE (NEW)
 @app.post("/download-pdf")
 async def download_pdf(result: str = Form(...)):
+
     file_path = "result.pdf"
+
     c = canvas.Canvas(file_path)
     c.setFont("Helvetica", 12)
 
     width = 500
     y = 800
+
     words = result.split()
     line = ""
 
     for word in words:
+
         test_line = line + word + " "
+
         if c.stringWidth(test_line, "Helvetica", 12) < width:
             line = test_line
         else:
@@ -111,4 +111,5 @@ async def download_pdf(result: str = Form(...)):
         c.drawString(50, y, line)
 
     c.save()
+
     return FileResponse(file_path, media_type="application/pdf", filename="AI_Result.pdf")
