@@ -9,3 +9,4 @@ pdf2image
 numpy
 reportlab
 langchain-community
+python-multipart
