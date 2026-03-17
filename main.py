@@ -21,9 +21,9 @@ templates = Jinja2Templates(directory="templates")
 os.makedirs("uploads", exist_ok=True)
 
 
-from fastapi import Request, FastAPI
+from fastapi import Request
 
-@app.get("/", methods=["GET", "HEAD"])
+@app.api_route("/", methods=["GET", "HEAD"])
 async def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
