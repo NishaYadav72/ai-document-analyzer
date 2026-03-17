@@ -5,8 +5,8 @@ from PIL import Image
 from pdf2image import convert_from_path
 import re
 
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-
+import pytesseract
+pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
 
 def read_pdf(file_path):
 
