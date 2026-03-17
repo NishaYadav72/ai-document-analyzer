@@ -29,78 +29,77 @@ async def home(request: Request):
 
 @app.post("/analyze", response_class=HTMLResponse)
 async def analyze(request: Request, file: UploadFile = File(...), prompt: str = Form(...)):
+    try:
+        # Save uploaded file
+        file_location = f"uploads/{file.filename}"
+        with open(file_location, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
 
-    file_location = f"uploads/{file.filename}"
+        context = ""
+        pages = 0
 
-    with open(file_location, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+        # PDF
+        if file.filename.endswith(".pdf"):
+            data = read_pdf(file_location)
+            context = data["text"]
+            pages = data["pages"]
 
-    context = ""
-    pages = 0
+        # Excel
+        elif file.filename.endswith(".xlsx"):
+            context = read_excel(file_location)
+            pages = 1
 
-    # PDF
-    if file.filename.endswith(".pdf"):
-        data = read_pdf(file_location)
-        context = data["text"]
-        pages = data["pages"]
+        # Images
+        elif file.filename.lower().endswith((".png", ".jpg", ".jpeg")):
+            context = read_image(file_location)
+            pages = 1
 
-    # Excel
-    elif file.filename.endswith(".xlsx"):
-        context = read_excel(file_location)
-        pages = 1
+        # Decide prompt behaviour
+        prompt_lower = prompt.lower()
+        show_pages = False
 
-    # Image
-    elif file.filename.endswith(".png") or file.filename.endswith(".jpg") or file.filename.endswith(".jpeg"):
-        context = read_image(file_location)
-        pages = 1
-    print("OCR TEXT:", context)
+        if "page" in prompt_lower:
+            result = f"The document contains {pages} pages."
+            show_pages = True
 
-    prompt_lower = prompt.lower()
-    show_pages = False   # yaha default define karo
+        elif "name" in prompt_lower:
+            result = extract_name(context)
 
-    if "page" in prompt_lower:
-     result = f"The document contains {pages} pages."
-     show_pages = True
+        elif "write" in prompt_lower or "text" in prompt_lower:
+            result = context  # direct OCR/text output
 
-    elif "name" in prompt_lower:
-        result = extract_name(context)
+        else:
+            result = ask_llm(prompt, context)
 
-    elif "write" in prompt_lower or "text" in prompt_lower:
-        result = context   # direct OCR text
+        return templates.TemplateResponse(
+            "result.html",
+            {
+                "request": request,
+                "result": result,
+                "pages": pages,
+                "show_pages": show_pages,
+            },
+        )
 
-
-    else:
-        result = ask_llm(prompt, context)
-    return templates.TemplateResponse(
-        "result.html",
-        {
-            "request": request,
-            "result": result,
-            "pages": pages,
-            "show_pages": show_pages
-       }
-  )
+    except Exception as e:
+        # 💥 Print error to logs (Render will show this)
+        print("❌ ANALYZE ERROR:", e)
+        raise  # re‑raise so the stacktrace gets logged by uvicorn
 
 
-# ✅ PDF DOWNLOAD ROUTE (NEW)
 @app.post("/download-pdf")
 async def download_pdf(result: str = Form(...)):
-
     file_path = "result.pdf"
-
     c = canvas.Canvas(file_path)
     c.setFont("Helvetica", 12)
 
     width = 500
     y = 800
-
     words = result.split()
     line = ""
 
     for word in words:
-
         test_line = line + word + " "
-
         if c.stringWidth(test_line, "Helvetica", 12) < width:
             line = test_line
         else:
@@ -112,5 +111,4 @@ async def download_pdf(result: str = Form(...)):
         c.drawString(50, y, line)
 
     c.save()
-
     return FileResponse(file_path, media_type="application/pdf", filename="AI_Result.pdf")
