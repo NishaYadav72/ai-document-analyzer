@@ -1,12 +1,10 @@
 fastapi
 uvicorn
 jinja2
-easyocr
-torch
-torchvision
-numpy
-pillow
+pytesseract
+Pillow
 PyPDF2
 pandas
 pdf2image
+numpy
 reportlab
