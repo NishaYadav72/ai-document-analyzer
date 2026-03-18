@@ -1,17 +1,21 @@
 from fastapi import FastAPI, UploadFile, File, Form, Request
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.templating import Jinja2Templates
-import shutil
-import os
+import shutil, os
 
-from file_processor import read_pdf, read_excel, read_image
+# UPDATED IMPORTS ✅
+from file_processor import (
+    read_pdf,
+    read_excel,
+    read_image,
+    smart_extract   # 🔥 new smart logic
+)
+
 from llm_engine import ask_llm
 from reportlab.pdfgen import canvas
 
 app = FastAPI()
-
 templates = Jinja2Templates(directory="templates")
-
 os.makedirs("uploads", exist_ok=True)
 
 
@@ -33,33 +37,52 @@ async def analyze(request: Request, file: UploadFile = File(...), prompt: str = 
     context = ""
     pages = 0
 
-    # PDF
-    if file.filename.endswith(".pdf"):
+    # ---------------- FILE TYPE DETECTION ----------------
+    if file.filename.lower().endswith(".pdf"):
         data = read_pdf(file_location)
         context = data["text"]
         pages = data["pages"]
 
-    # Excel
-    elif file.filename.endswith(".xlsx"):
+    elif file.filename.lower().endswith(".xlsx"):
         context = read_excel(file_location)
         pages = 1
 
-    # Image
-    elif file.filename.endswith((".png", ".jpg", ".jpeg")):
+    elif file.filename.lower().endswith((".png", ".jpg", ".jpeg")):
         context = read_image(file_location)
         pages = 1
 
-    print("DOCUMENT TEXT:", context)
+    else:
+        context = "Unsupported file type"
 
-    # ✅ SMART AI RESPONSE
-    result = ask_llm(prompt, context)
+    print("OCR TEXT:", context[:500])  # debug
+
+    prompt_lower = prompt.lower()
+    show_pages = False
+    result = ""
+
+    # ---------------- SPECIAL CASE ----------------
+    if "page" in prompt_lower:
+        result = f"The document contains {pages} pages."
+        show_pages = True
+
+    elif "write" in prompt_lower or "text" in prompt_lower:
+        result = context  # full text
+
+    else:
+        # 🔥 MAIN SMART LOGIC
+        result = smart_extract(prompt, context)
+
+        # 🔥 fallback to LLM (optional)
+        if not result or result.strip() == "" or result == "Answer not found in document":
+            result = ask_llm(prompt, context)
 
     return templates.TemplateResponse(
         "result.html",
         {
             "request": request,
             "result": result,
-            "pages": pages
+            "pages": pages,
+            "show_pages": show_pages
         }
     )
 
@@ -67,7 +90,6 @@ async def analyze(request: Request, file: UploadFile = File(...), prompt: str = 
 # ---------------- PDF DOWNLOAD ----------------
 @app.post("/download-pdf")
 async def download_pdf(result: str = Form(...)):
-
     file_path = "result.pdf"
 
     c = canvas.Canvas(file_path)
@@ -80,7 +102,6 @@ async def download_pdf(result: str = Form(...)):
     line = ""
 
     for word in words:
-
         test_line = line + word + " "
 
         if c.stringWidth(test_line, "Helvetica", 12) < width:
