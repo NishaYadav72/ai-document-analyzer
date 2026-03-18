@@ -2,11 +2,11 @@ from PyPDF2 import PdfReader
 import pandas as pd
 import pytesseract
 from PIL import Image
-from pdf2image import convert_from_path
 import os
 import re
 
-# OS ke hisab se tesseract path set karo
+# ---------------- TESSERACT CONFIG ----------------
+# Local me chale, server me fail ho to ignore kare
 if os.name == "nt":
     pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 else:
@@ -27,14 +27,10 @@ def read_pdf(file_path):
         if extracted:
             text += extracted
 
-    # Agar scanned PDF ho to OCR use karo
+    # Agar text nahi mila (scanned PDF)
     if text.strip() == "":
         try:
-            images = convert_from_path(file_path, dpi=300)
-
-            for img in images:
-                text += pytesseract.image_to_string(img)
-
+            text = "Scanned PDF detected. OCR not supported on server."
         except Exception as e:
             text = f"OCR Error: {str(e)}"
 
@@ -64,16 +60,21 @@ def read_image(file_path):
         # grayscale conversion
         img = img.convert("L")
 
-        # OCR text
-        text = pytesseract.image_to_string(img)
+        try:
+            # OCR try karo
+            text = pytesseract.image_to_string(img)
+        except:
+            text = "OCR not available on server"
 
         return text
 
     except Exception as e:
-        return f"Image OCR error: {str(e)}"
+        return f"Image processing error: {str(e)}"
 
 
+# ---------------- EXPERIENCE EXTRACTION ----------------
 def extract_experience(text):
+
     lines = text.split("\n")
 
     for line in lines:
@@ -81,6 +82,7 @@ def extract_experience(text):
             return line
 
     return "Experience not found"
+
 
 # ---------------- NAME EXTRACTION ----------------
 def extract_name(text):
