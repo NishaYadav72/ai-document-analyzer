@@ -7,3 +7,4 @@ Pillow
 pdfplumber
 openpyxl
 reportlab
+PyPDF2
