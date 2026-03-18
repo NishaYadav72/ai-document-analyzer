@@ -73,6 +73,15 @@ def read_image(file_path):
         return f"Image OCR error: {str(e)}"
 
 
+def extract_experience(text):
+    lines = text.split("\n")
+
+    for line in lines:
+        if "experience" in line.lower():
+            return line
+
+    return "Experience not found"
+
 # ---------------- NAME EXTRACTION ----------------
 def extract_name(text):
 

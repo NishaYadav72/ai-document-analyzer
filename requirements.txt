@@ -1,12 +1,9 @@
 fastapi
 uvicorn
 jinja2
+python-multipart
 pytesseract
 Pillow
-PyPDF2
-pandas
-pdf2image
-numpy
+pdfplumber
+openpyxl
 reportlab
-langchain-community
-python-multipart
